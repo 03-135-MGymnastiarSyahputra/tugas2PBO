@@ -1,0 +1,96 @@
+import random
+
+class Robot:
+    def __init__(self, name, attack, hp, attack_accuracy, dodge, speed):
+        self.name = name
+        self.attack = attack
+        self.hp = hp
+        self.attack_accuracy = attack_accuracy
+        self.dodge = dodge
+        self.speed = speed
+        self.stunned = False
+
+    def attack_enemy(self, enemy):
+        if random.random() <= self.attack_accuracy:
+            damage = self.attack
+            enemy.hp -= damage
+            stun_message = ""
+            # Cek apakah serangan menyebabkan stun
+            if random.random() < 0.3:  # 30% chance to stun
+                enemy.stunned = True
+                stun_message = " dan menyebabkan stun!"
+            print(f"{self.name} menyerang {enemy.name} dan memberikan {damage} damage{stun_message}")
+        else:
+            print(f"{self.name} menyerang tetapi meleset!")
+
+    def regen_health(self, amount):
+        self.hp += amount
+        print(f"{self.name} meregenerasi {amount} HP!")
+
+    def is_alive(self):
+        return self.hp > 0
+
+    def reset_stun(self):
+        self.stunned = False
+
+    def try_dodge(self):
+        return random.random() < self.dodge
+
+class Game:
+    def __init__(self, robot1, robot2):
+        self.robot1 = robot1
+        self.robot2 = robot2
+        self.round = 1
+
+    def start_game(self):
+        print("Pertarungan dimulai!")
+        while self.robot1.is_alive() and self.robot2.is_alive():
+            print(f"\n--- Ronde {self.round} ---")
+            # Tentukan urutan aksi berdasarkan speed
+            if self.robot1.speed >= self.robot2.speed:
+                self.player_action(self.robot1, self.robot2)
+                if self.robot2.is_alive() and not self.robot2.stunned:
+                    self.player_action(self.robot2, self.robot1)
+                elif self.robot2.is_alive():
+                    print(f"{self.robot2.name} terkena stun dan tidak dapat melakukan aksi!")
+            else:
+                self.player_action(self.robot2, self.robot1)
+                if self.robot1.is_alive() and not self.robot1.stunned:
+                    self.player_action(self.robot1, self.robot2)
+                elif self.robot1.is_alive():
+                    print(f"{self.robot1.name} terkena stun dan tidak dapat melakukan aksi!")
+
+            # Reset stun status untuk ronde berikutnya
+            self.robot1.reset_stun()
+            self.robot2.reset_stun()
+
+            # Cek status hidup
+            if not self.robot1.is_alive():
+                print(f"{self.robot1.name} telah kalah!")
+                break
+            if not self.robot2.is_alive():
+                print(f"{self.robot2.name} telah kalah!")
+                break
+
+            self.round += 1
+
+        print("Permainan selesai!")
+
+    def player_action(self, player, opponent):
+        action = input(f"{player.name}, apakah Anda ingin (1) menyerang atau (2) meregenerasi? ")
+        if action == '1':
+            if opponent.try_dodge():
+                print(f"{opponent.name} berhasil menghindari serangan!")
+            else:
+                player.attack_enemy(opponent)
+        elif action == '2':
+            player.regen_health(20)  # Regenerasi 20 HP
+        else:
+            print("Pilihan tidak valid!")
+
+# Contoh penggunaan
+robot1 = Robot(name="Robot A", attack=40, hp=100, attack_accuracy=0.8, dodge=0.2, speed=5)
+robot2 = Robot(name="Robot B", attack=35, hp=100, attack_accuracy=0.9, dodge=0.3, speed=4)
+
+game = Game(robot1, robot2)
+game.start_game()
